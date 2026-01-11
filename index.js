@@ -2,8 +2,9 @@ const BACKGROUND = "#101010"
 const FOREGROUND = "#50FF50"
 
 console.log(game)
-game.width = 800
-game.height = 800
+game.width = 1280
+game.height = 720
+
 const ctx = game.getContext("2d")
 console.log(ctx)
 
@@ -28,9 +29,11 @@ function line(p1, p2) {
 }
 
 function screen(p) {
+
+    const aspect_ratio = game.width / game.height;
     // -1..1 => 0..2 => 0..1 => 0..w/h => 0..w
     return {
-        x: (p.x + 1) / 2 * game.width,
+        x: (p.x + aspect_ratio) / (2 * aspect_ratio) * game.width,
         y: (1 - (p.y + 1) / 2) * game.height
     }
 
