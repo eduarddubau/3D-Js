@@ -44,7 +44,7 @@ function project({x, y, z}) {
 }
 
 const FPS = 60;
-let dz = 2;
+let dz = 1;
 angle = 0;
 
 function translate_z({x, y, z}, dz) {
@@ -63,31 +63,26 @@ function rotate_xz({x, y, z}, angle) {
 
 }
 
-const vertices = [
-    {x:  0.5, y:  0.5, z:  0.5},
-    {x: -0.5, y:  0.5, z:  0.5},
-    {x: -0.5, y: -0.5, z:  0.5},
-    {x:  0.5, y: -0.5, z:  0.5},
+let current_object = 'CUBE';
 
-    {x:  0.5, y:  0.5, z: -0.5},
-    {x: -0.5, y:  0.5, z: -0.5},
-    {x: -0.5, y: -0.5, z: -0.5},
-    {x:  0.5, y: -0.5, z: -0.5},
-]
-
-const faces = [
-    [0, 1, 2, 3],
-    [4, 5, 6, 7],
-    [0, 4],
-    [1, 5],
-    [2, 6], 
-    [3, 7]
-]
+const objects = {
+    CUBE: {
+        vertices: cube_v,
+        faces: cube_f
+    },
+    PENGER: {
+        vertices: penger_v,
+        faces: penger_f
+    }
+}
 
 function frame() {
     const dt = 1 / FPS;
     //dz += 1 * dt
     angle += Math.PI * dt;
+
+    const vertices = objects[current_object].vertices;
+    const faces = objects[current_object].faces;
 
     clear()
 
@@ -103,6 +98,18 @@ function frame() {
                  screen(project(translate_z(rotate_xz(second_vertex, angle), dz))));
         }
     }
+
+    window.addEventListener('keydown', (event) => {
+        switch (event.key) {
+            case ' ':
+                console.log("Switch!");
+                current_object = current_object === 'CUBE' ? 'PENGER' : 'CUBE';
+                break;
+            default:
+                console.log(`Key pressed: ${event.key}`);
+        }
+    });
+
     setTimeout(frame, 1000/FPS);
 }
 setTimeout(frame, 1000/FPS);
