@@ -43,9 +43,9 @@ function project({x, y, z}) {
     }
 }
 
-const FPS = 60;
 let dz = 1;
 angle = 0;
+let lastTime = performance.now();
 
 function translate_z({x, y, z}, dz) {
     return {x, y, z: z + dz}
@@ -77,7 +77,9 @@ const objects = {
 }
 
 function frame() {
-    const dt = 1 / FPS;
+    const currentTime = performance.now();
+    const dt = (currentTime - lastTime) / 1000;
+    lastTime = currentTime;
     //dz += 1 * dt
     angle += Math.PI * dt;
 
@@ -110,6 +112,6 @@ function frame() {
         }
     });
 
-    setTimeout(frame, 1000/FPS);
+    requestAnimationFrame(frame);
 }
-setTimeout(frame, 1000/FPS);
+requestAnimationFrame(frame);
