@@ -47,6 +47,7 @@ function project({x, y, z}) {
 }
 
 let dz = 1;
+let z_step = 0.1;
 angle = 0;
 let lastTime = performance.now();
 
@@ -104,17 +105,29 @@ function frame() {
         }
     }
 
-    window.addEventListener('keydown', (event) => {
-        switch (event.key) {
-            case ' ':
-                console.log("Switch!");
-                current_object = current_object === 'CUBE' ? 'PENGER' : 'CUBE';
-                break;
-            default:
-                console.log(`Key pressed: ${event.key}`);
-        }
-    });
-
     requestAnimationFrame(frame);
 }
+
+window.addEventListener('keydown', (event) => {
+    switch (event.key) {
+        case ' ':
+            console.log("Switch!");
+            current_object = current_object === 'CUBE' ? 'PENGER' : 'CUBE';
+            break;
+        default:
+            console.log(`Key pressed: ${event.key}`);
+    }
+});
+
+window.addEventListener('wheel', (event) => {
+    event.preventDefault();
+    if (event.deltaY < 0) {
+        console.log("Scroll up - Forward! dz="+dz);
+        dz -= z_step;
+    } else {
+        console.log("Scroll down - Backward! dz="+dz);
+        dz += z_step;
+    }
+});
+
 requestAnimationFrame(frame);
