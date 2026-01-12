@@ -1,0 +1,9 @@
+{
+  "models": [
+    "cube.obj",
+    "cube-solid.obj",
+    "cyber-penger.obj",
+    "penger.obj",
+    "real-penger.obj"
+  ]
+}

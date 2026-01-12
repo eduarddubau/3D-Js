@@ -16,18 +16,8 @@ const ctx = game.getContext("2d")
 let dz = 1
 let angle = 0
 let lastTime = performance.now()
-let current_object = 'CUBE'
-
-const objects = {
-    CUBE: {
-        vertices: cube_v,
-        faces: cube_f
-    },
-    PENGER: {
-        vertices: penger_v,
-        faces: penger_f
-    }
-}
+let loadedModels = []
+let currentModelIndex = 0
 
 // ===== DRAWING FUNCTIONS =====
 function clear() {
@@ -85,18 +75,39 @@ function transformVertex(vertex, angle, dz) {
 }
 
 // ===== RENDERING FUNCTIONS =====
-function renderFace(face, vertices, angle, dz) {
-    for (let i = 0; i < face.length; ++i) {
-        const first_vertex = vertices[face[i]]
-        const second_vertex = vertices[face[(i + 1) % face.length]]
-        line(transformVertex(first_vertex, angle, dz),
-             transformVertex(second_vertex, angle, dz))
+function renderFace(face, vertices, angle, dz, isSolid = false) {
+    const points = face.map(i => transformVertex(vertices[i], angle, dz))
+    
+    // Draw lines
+    for (let i = 0; i < points.length; ++i) {
+        line(points[i], points[(i + 1) % points.length])
+    }
+    
+    // Fill if solid
+    if (isSolid) {
+        ctx.fillStyle = FOREGROUND
+        ctx.beginPath()
+        ctx.moveTo(points[0].x, points[0].y)
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y)
+        }
+        ctx.closePath()
+        ctx.fill()
     }
 }
 
-function renderObject(vertices, faces, angle, dz) {
+function renderObject(model, angle, dz) {
+    const {vertices, faces, edges, maxDim} = model.geometry
+    const isSolid = model.name.includes('solid')
+    const local_dz = dz * maxDim * 4
+    
     for (const face of faces) {
-        renderFace(face, vertices, angle, dz)
+        renderFace(face, vertices, angle, local_dz, isSolid)
+    }
+    for (const edge of edges) {
+        const p1 = transformVertex(vertices[edge[0]], angle, local_dz)
+        const p2 = transformVertex(vertices[edge[1]], angle, local_dz)
+        line(p1, p2)
     }
 }
 
@@ -104,8 +115,8 @@ function renderObject(vertices, faces, angle, dz) {
 function handleKeyDown(event) {
     switch (event.key) {
         case ' ':
-            current_object = current_object === 'CUBE' ? 'PENGER' : 'CUBE'
-            console.log("Switch to:", current_object)
+            currentModelIndex = (currentModelIndex + 1) % loadedModels.length
+            console.log("Switch to:", loadedModels[currentModelIndex].name)
             break
         default:
             console.log(`Key pressed: ${event.key}`)
@@ -136,14 +147,22 @@ function frame() {
     
     angle += Math.PI * dt
 
-    const {vertices, faces} = objects[current_object]
+    if (loadedModels.length > 0) {
+        const model = loadedModels[currentModelIndex]
 
-    clear()
-    renderObject(vertices, faces, angle, dz)
+        clear()
+        renderObject(model, angle, dz)
+    }
 
     requestAnimationFrame(frame)
 }
 
 // ===== STARTUP =====
-setupInputListeners()
-requestAnimationFrame(frame)
+async function start() {
+    loadedModels = await loadAllModels()
+    console.log("Loaded models:", loadedModels.map(m => m.name))
+    setupInputListeners()
+    requestAnimationFrame(frame)
+}
+
+start()

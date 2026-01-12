@@ -1,3 +1,92 @@
+// 1. The Parser (Logic)
+function parseObj(text) {
+    const vertices = [];
+    const faces = [];
+    const edges = [];
+    const lines = text.split('\n');
+
+    for (let line of lines) {
+        line = line.trim();
+        const parts = line.split(/\s+/);
+        if (parts[0] === 'v') {
+            // Vertex: v x y z
+            vertices.push({ x: parseFloat(parts[1]), y: parseFloat(parts[2]), z: parseFloat(parts[3]) });
+        } else if (parts[0] === 'f') {
+            // parts[0] is 'f', parts[1...n] are the vertex indices
+            // Convert 1-based to 0-based integers
+            const vertexIndices = parts.slice(1).map(idx => parseInt(idx.split('/')[0]) - 1);
+
+            if (vertexIndices.length === 2) {
+                // Edge: add to edges
+                edges.push(vertexIndices);
+            } else if (vertexIndices.length >= 3) {
+                // Keep the face as polygon
+                faces.push(vertexIndices);
+            }
+        }
+    }
+    return { vertices, faces, edges };
+}
+
+// 2. The Integrated Loader
+async function loadAllModels() {
+    try {
+        // Fetch the list of files first
+        const response = await fetch('./models.json');
+        const list = await response.json();
+        
+        // Map the filenames to a list of "Loading + Parsing" tasks
+        const loadTasks = list.models.map(async (fileName) => {
+            const fileRes = await fetch(`./models/${fileName}`);
+            const text = await fileRes.text();
+            
+            const geometry = parseObj(text);
+            
+            // Center the model at origin
+            if (geometry.vertices.length > 0) {
+                let centerX = 0, centerY = 0, centerZ = 0;
+                for (const v of geometry.vertices) {
+                    centerX += v.x;
+                    centerY += v.y;
+                    centerZ += v.z;
+                }
+                centerX /= geometry.vertices.length;
+                centerY /= geometry.vertices.length;
+                centerZ /= geometry.vertices.length;
+                
+                for (const v of geometry.vertices) {
+                    v.x -= centerX;
+                    v.y -= centerY;
+                    v.z -= centerZ;
+                }
+                
+                // Compute max dimension for scaling dz
+                let maxDim = 0;
+                for (const v of geometry.vertices) {
+                    maxDim = Math.max(maxDim, Math.abs(v.x), Math.abs(v.y), Math.abs(v.z));
+                }
+                geometry.maxDim = maxDim;
+            }
+            
+            // Return an object containing the filename and the parsed data
+            return {
+                name: fileName,
+                geometry
+            };
+        });
+
+        // Run all tasks at once
+        const allModels = await Promise.all(loadTasks);
+        
+        console.log("Success! All models parsed:", allModels);
+        return allModels; // Array of { name: "tree.obj", geometry: { vertices, faces } }
+    } catch (err) {
+        console.error("Failed to load models:", err);
+    }
+}
+
+
+
 const cube_v = [
     {x:  0.25, y:  0.25, z:  0.25},
     {x: -0.25, y:  0.25, z:  0.25},
